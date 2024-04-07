@@ -62,8 +62,7 @@ function analyzeAudio() {
     cube4.scale.lerp(vec, 0.3)
     cube5.scale.lerp(vec, 0.3)
     cube6.scale.lerp(vec, 0.3)
-    // cube7.scale.lerp(vec, 0.3)
-    cube8.scale.lerp(vec, 0.3)
+    cube7.scale.lerp(vec, 0.3)
 }
 
 const objLoader = new OBJLoader();
@@ -77,16 +76,95 @@ let donut2 = undefined;
 const objectGroup2 = new THREE.Group();
 
 let entenArray = [];
-let entenArray2 = []
+let entenArray2 = [];
+
+const vertPhong = `
+varying vec3 vNormal;
+varying vec3 vViewPosition;
+
+void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    gl_Position = projectionMatrix * mvPosition;
+}
+`
+
+const fragPhong = `
+varying vec3 vNormal;
+varying vec3 vViewPosition;
+
+uniform vec3 diffuseColor;
+uniform vec3 specularColor;
+uniform float shininess;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 viewDir = normalize(vViewPosition);
+    vec3 lightDir = normalize(vec3(0.0, 1.0, 1.0)); 
+
+    vec3 ambient = diffuseColor * 0.3;
+
+    float diffuseIntensity = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diffuseColor * diffuseIntensity;
+
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    vec3 specular = specularColor * spec * 0.5;
+
+    vec3 result = ambient + diffuse + specular;
+    gl_FragColor = vec4(result, 1.0);
+}
+`
+
+const phongMat = new THREE.ShaderMaterial({
+    uniforms: {
+        diffuseColor: { value: new THREE.Color(0xFF522D) },
+        specularColor: { value: new THREE.Color(0xffffff) },
+        shininess: { value: 1 }
+    },
+    vertexShader: vertPhong,
+    fragmentShader: fragPhong
+});
+
+const vertLambert = `
+varying vec3 vNormal;
+
+void main() {
+    vNormal = normalMatrix * normal;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`
+
+const fragLambert = `
+varying vec3 vNormal;
+uniform vec3 diffuseColor;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 lightDirection = normalize(vec3(0.0, 1.0, 1.0)); // Richtung des Lichts
+    float intensity = dot(normal, lightDirection);
+    vec3 color = diffuseColor * intensity;
+
+    gl_FragColor = vec4(color, 1.0);
+}
+`
+const lambertMat = new THREE.ShaderMaterial({
+    uniforms: {
+        diffuseColor: { value: new THREE.Color(0xffa500) },
+    },
+    vertexShader: vertLambert,
+    fragmentShader: fragLambert
+});
+
 
 objLoader.load(
     'objs/bob_tri.obj',
     function (object) {
 
-        const mainEnteMaterial = new THREE.MeshLambertMaterial({ color: 0xFB6542 });
         object.traverse(function (child) {
             if (child instanceof THREE.Mesh) {
-                child.material = mainEnteMaterial;
+                child.material = phongMat;
             }
         });
         ente = object
@@ -111,7 +189,7 @@ objLoader.load(
 
             objectCopy2.traverse(function (child) {
                 if (child instanceof THREE.Mesh) {
-                    child.material = materialBasic2;
+                    child.material = lambertMat;
                 }
             });
 
@@ -149,24 +227,8 @@ function entenRing(scene) {
     scene.add(donut)
 }
 
-const light = new THREE.AmbientLight({ color: 0xFFFFFF, intensity: 1 });
+const light = new THREE.AmbientLight({ color: 0xFFFFFF, intensity: 0.1 });
 scene.add(light);
-
-const light2 = new THREE.PointLight({ color: 0xFFFFFF, intensity: 1 })
-light2.position.y = 0.5
-scene.add(light2);
-
-const light3 = new THREE.PointLight({ color: 0xFFFFFF, intensity: 1 })
-light3.position.y = -0.5
-scene.add(light3);
-
-const light4 = new THREE.PointLight({ color: 0xFFFFFF, intensity: 1 })
-light4.position.x = -0.5
-scene.add(light4);
-
-const light5 = new THREE.PointLight({ color: 0xFFFFFF, intensity: 1 })
-light5.position.x = 0.5
-scene.add(light5);
 
 const mainColor1 = 0xFB6542
 const mainColor2 = 0xffa500
@@ -211,17 +273,11 @@ cube6.position.z = -2
 cube6.rotation.z = Math.PI / 4
 scene.add(cube6);
 
-// const geometry7 = new THREE.BoxGeometry(0.125, 0.125, 0.125);
-// const material7 = new THREE.MeshBasicMaterial({ color: mainColor2 });
-// const cube7 = new THREE.Mesh(geometry7, material7);
-// cube7.position.z = -1
-// scene.add(cube7);
-
-const geometry8 = new THREE.BoxGeometry(0.0625, 0.0625, 0.0625);
-const material8 = new THREE.MeshBasicMaterial({ color: mainColor3 });
-const cube8 = new THREE.Mesh(geometry8, material8);
-cube8.position.z = 0
-scene.add(cube8);
+const geometry7 = new THREE.BoxGeometry(0.0625, 0.0625, 0.0625);
+const material7 = new THREE.MeshBasicMaterial({ color: mainColor3 });
+const cube7 = new THREE.Mesh(geometry7, material7);
+cube7.position.z = 0
+scene.add(cube7);
 
 const openerGeo1 = new THREE.BoxGeometry(0.6, 0.6, 0.0005);
 const openerMat1 = new THREE.MeshBasicMaterial({ color: 0x000000 });
@@ -295,14 +351,13 @@ function changeColors(color1, color2, color3) {
     cube4.material.color.set(color2);
     cube5.material.color.set(color3);
     cube6.material.color.set(color1);
-    // cube7.material.color.set(color2);
-    cube8.material.color.set(color3);
+    cube7.material.color.set(color3);
 }
 
 function changeDuckColors(color) {
     entenArray[0].traverse(function (child) {
         if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
+            child.material.color.set(color);        
         }
     });
 }
@@ -310,7 +365,7 @@ function changeDuckColors(color) {
 function changeDuckColors2(color) {
     entenArray2[0].traverse(function (child) {
         if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
+            child.material.uniforms.diffuseColor.value.set(color);
         }
     });
 }
@@ -318,7 +373,7 @@ function changeDuckColors2(color) {
 function changeDuckColor(color) {
     ente.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
+            child.material.uniforms.diffuseColor.value.set(color);
         }
     });
 }
@@ -363,7 +418,7 @@ function resetTime() {
 
 const startButton = document.getElementById('startButton');
 startButton.addEventListener('click', function () {
-    if(!clock.running) {
+    if (!clock.running) {
         music.play();
         clock.start()
         freezedScene = false
@@ -387,45 +442,45 @@ var freezedScene = true
 
 function animate() {
 
-    if(!freezedScene) {
-        if(clock.running) {
+    if (!freezedScene) {
+        if (clock.running) {
             delta = clock.getElapsedTime() + passedTime
         }
 
-        if(duration <= delta){
+        if (duration <= delta) {
             resetTime()
         }
-    
+
         analyzeAudio();
-    
-        if(delta < 23 && delta > 0) {
+
+        if (delta < 23 && delta > 0) {
             openScene()
         }
-    
-    
+
+
         if (delta < 25.15 && delta > 0) {
             cube1.rotation.z -= spinnSpeed
             cube4.rotation.z += spinnSpeed
             cube6.rotation.z -= spinnSpeed
             spinnSpeed += 0.00002
         }
-    
+
         if (ente) {
             ente.rotation.x += 0.01;
             ente.rotation.y += 0.01;
         }
-    
+
         // first drop
 
         if (25.15 < delta && delta < 25.25) {
             entenRing(scene)
         }
-    
+
         if (donut) {
             jumping()
             if (38.7 > delta || delta > 40.6) {
-                if(delta < 53.5 || delta > 56.1) {
-                    if(delta < 69.7 || delta > 71.4) {
+                if (delta < 54.5 || delta > 56.1) {
+                    if (delta < 69.7 || delta > 71.4) {
                         donut.rotation.z += 0.005;
                         cube1.rotation.z += -0.02;
                         cube4.rotation.z += 0.02;
@@ -440,37 +495,37 @@ function animate() {
         }
 
         if (donut2) {
-            if(delta < 69.7 || delta > 71.4) {
+            if (delta < 69.7 || delta > 71.4) {
                 donut2.rotation.z += 0.005
             }
             objectGroup2.children.forEach(function (donut, index) {
-    
+
                 if (donut) {
                     donut.rotation.x += 0.01;
                     donut.rotation.y += 0.01;
                 }
             });
         }
-    
+
         if (29.03 < delta && delta < 29.13) {
             changeColors(0x003366, 0xCCFF33, 0x00FF99)
             changeDuckColors(0x00FF99)
             changeDuckColor(0x003366)
         }
-    
+
         if (32.9 < delta && delta < 33) {
             changeColors(0x53004B, 0xFDD023, 0x7549B1)
             changeDuckColors(0x7549B1)
             changeDuckColor(0x53004B)
 
         }
-    
+
         if (36.77 < delta && delta < 36.87) {
             changeColors(0x990033, 0xFFFF00, 0x336699)
             changeDuckColors(0xFFFF00)
             changeDuckColor(0x990033)
         }
-    
+
         if (38.7 < delta && delta < 40.6) {
             donut.rotation.z -= 0.002;
             cube1.rotation.z -= -0.02;
@@ -479,25 +534,25 @@ function animate() {
         }
 
         // second drop
-    
+
         if (40.6 < delta && delta < 40.7) {
             changeColors(0xFF522D, 0xffa500, 0xFFE346)
             changeDuckColors(0xFF522D)
             changeDuckColor(0xFF522D)
             upsizeDucks()
         }
-    
+
         if (44.5 < delta && delta < 44.6) {
             changeColors(0x003366, 0xCCFF33, 0x00FF99)
             changeDuckColors(0x003366)
             changeDuckColor(0x003366)
         }
-    
+
         if (48.35 < delta && delta < 48.45) {
             changeColors(0x53004B, 0xFDD023, 0x7549B1)
             changeDuckColors(0x53004B)
             changeDuckColor(0x53004B)
-    
+
         }
         if (52.3 < delta && delta < 52.4) {
             changeColors(0x990033, 0xFFFF00, 0x336699)
@@ -505,15 +560,17 @@ function animate() {
             changeDuckColor(0x990033)
         }
 
-        if (53.5 < delta && delta < 56.1) {
+        if (54.5 < delta && delta < 56.1) {
             donut.rotation.z -= 0.002;
             cube1.rotation.z -= -0.02;
             cube4.rotation.z -= 0.02;
             cube6.rotation.z -= -0.02;
         }
 
+        // thrid drop
+
         if (56.1 < delta && delta < 56.2) {
-            if(donut2) {
+            if (donut2) {
                 changeDuckColors2(0xFFE346)
                 scene.add(donut2)
             }
@@ -550,7 +607,7 @@ function animate() {
             cube4.rotation.z -= 0.02;
             cube6.rotation.z -= -0.02;
         }
-        
+
         if (71.5 < delta && delta < 71.6) {
             changeDuckColors2(0xFFE346)
             changeColors(0xFF522D, 0xffa500, 0xFFE346)
@@ -565,7 +622,7 @@ function animate() {
             changeDuckColor(0x003366)
         }
 
-        
+
         if (79.3 < delta && delta < 79.4) {
             changeDuckColors2(0x7549B1)
             changeColors(0x53004B, 0xFDD023, 0x7549B1)
@@ -581,7 +638,7 @@ function animate() {
         }
 
 
-        if(delta > 64 && delta < 87) {
+        if (delta > 64 && delta < 87) {
             closeScene()
         }
         requestAnimationFrame(animate);
