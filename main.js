@@ -18,23 +18,15 @@ const music = new THREE.Audio(audioListener);
 scene.add(music);
 const audioLoader = new THREE.AudioLoader();
 
-// music.onEnded = function() {
-//     clock.stop()
-//     delta = 0
-//     passedTime = 0
-//     start()
-//     music.stop()
-//     music.start()
-// }
-
 var duration = 0
 
 audioLoader.load(
     './music.mp3',
     function (audioBuffer) {
-        music.setBuffer(audioBuffer);
+        music.setBuffer(audioBuffer)
         music.setLoop(true)
-        music.offset = 0; 
+        music.offset = 0
+        music.setVolume(0.5)
         duration = audioBuffer.duration
     },
     function (xhr) {
@@ -46,6 +38,9 @@ audioLoader.load(
     }
 );
 
+const analyser = new THREE.AudioAnalyser(music, 32);
+let zoom = undefined
+
 const avg = (array) => {
     return Math.floor(array.reduce((a, b) => a + b, 0) / array.length);
 }
@@ -54,13 +49,10 @@ const min = (calc, minValue) => {
     return calc < minValue ? minValue : calc;
 }
 
-const analyser = new THREE.AudioAnalyser(music, 32);
-let zoom = undefined
-
 function analyzeAudio() {
-    const test = analyser.getFrequencyData()
-    const kickArray = test.slice(0, 10)
-    zoom = min(avg(kickArray) / 100, 0.7)
+    const data = analyser.getFrequencyData()
+    const frequencyArray = data.slice(0, 10)
+    zoom = min(avg(frequencyArray) / 100, 0.7)
 
     const vec = new THREE.Vector3(zoom, zoom, zoom)
 
@@ -70,7 +62,7 @@ function analyzeAudio() {
     cube4.scale.lerp(vec, 0.3)
     cube5.scale.lerp(vec, 0.3)
     cube6.scale.lerp(vec, 0.3)
-    cube7.scale.lerp(vec, 0.3)
+    // cube7.scale.lerp(vec, 0.3)
     cube8.scale.lerp(vec, 0.3)
 }
 
@@ -81,11 +73,11 @@ let ente = undefined
 let donut = undefined;
 const objectGroup = new THREE.Group();
 
-let blinkers = undefined;
-const objectGroupBlinkers = new THREE.Group();
+let donut2 = undefined;
+const objectGroup2 = new THREE.Group();
 
 let entenArray = [];
-let blinkersArray = []
+let entenArray2 = []
 
 objLoader.load(
     'objs/bob_tri.obj',
@@ -104,8 +96,6 @@ objLoader.load(
 
         const materialBasic1 = new THREE.MeshBasicMaterial({ color: 0xffa500 });
         const materialBasic2 = new THREE.MeshBasicMaterial({ color: 0xffa500 });
-
-        const materialLambert = new THREE.MeshLambertMaterial({ color: 0x000000 });
 
         for (let i = 0; i < 11; i++) {
             let objectCopy1 = object.clone();
@@ -126,7 +116,7 @@ objLoader.load(
             });
 
             entenArray.push(objectCopy1);
-            blinkersArray.push(objectCopy2);
+            entenArray2.push(objectCopy2);
 
 
             const angle = (i / 11) * Math.PI * 2;
@@ -139,17 +129,12 @@ objLoader.load(
             entenArray[i].position.set(x, y, 0.2)
             objectGroup.add(entenArray[i]);
 
-            blinkersArray[i].scale.set(0.05, 0.05, 0.05)
-            blinkersArray[i].position.set(x, y, 0.3)
-            objectGroupBlinkers.add(blinkersArray[i]);
+            entenArray2[i].scale.set(0.05, 0.05, 0.05)
+            entenArray2[i].position.set(x, y, 0.2)
+            objectGroup2.add(entenArray2[i]);
         }
         donut = objectGroup
-        blinkers = objectGroupBlinkers
-
-        blinkersArray.forEach((blinker) => {
-            blinker.visible = false
-        })
-        scene.add(blinkers)
+        donut2 = objectGroup2
     },
     function (xhr) {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -162,31 +147,6 @@ objLoader.load(
 
 function entenRing(scene) {
     scene.add(donut)
-    changeBlinkerColors(0x000000)
-    // scene.add(blinkers)
-}
-
-let lastBlink = 0;
-
-function getRndmNumber() {
-    const rndmNumber = Math.floor(Math.random() * blinkersArray.length);
-    if (rndmNumber === lastBlink) {
-        return getRndmNumber()
-    }
-    return rndmNumber
-}
-
-let called = 0
-
-function blinking() {
-    called++
-    let rndmNumber = getRndmNumber()
-    lastBlink = rndmNumber;
-    blinkersArray[lastBlink].visible = true;
-}
-
-function stopBlink() {
-    blinkersArray[lastBlink].visible = false;
 }
 
 const light = new THREE.AmbientLight({ color: 0xFFFFFF, intensity: 1 });
@@ -251,11 +211,11 @@ cube6.position.z = -2
 cube6.rotation.z = Math.PI / 4
 scene.add(cube6);
 
-const geometry7 = new THREE.BoxGeometry(0.125, 0.125, 0.125);
-const material7 = new THREE.MeshBasicMaterial({ color: mainColor2 });
-const cube7 = new THREE.Mesh(geometry7, material7);
-cube7.position.z = -1
-scene.add(cube7);
+// const geometry7 = new THREE.BoxGeometry(0.125, 0.125, 0.125);
+// const material7 = new THREE.MeshBasicMaterial({ color: mainColor2 });
+// const cube7 = new THREE.Mesh(geometry7, material7);
+// cube7.position.z = -1
+// scene.add(cube7);
 
 const geometry8 = new THREE.BoxGeometry(0.0625, 0.0625, 0.0625);
 const material8 = new THREE.MeshBasicMaterial({ color: mainColor3 });
@@ -299,123 +259,6 @@ opener4.position.x = -0.2
 opener4.position.y = -0.2
 scene.add(opener4);
 
-// const geometry10 = new THREE.BoxGeometry(1, 20, 0);
-// const material10 = new THREE.MeshBasicMaterial({ color: 0xFFE346 });
-// const stripe1 = new THREE.Mesh(geometry10, material10);
-// stripe1.position.z = -10
-// stripe1.position.x = 8
-// stripe1.position.y = -20
-// // scene.add(stripe1);
-
-// const geometry11 = new THREE.BoxGeometry(1, 20, 0);
-// const stripe2 = new THREE.Mesh(geometry11, material10);
-// stripe2.position.z = -10
-// stripe2.position.x = -8
-// stripe2.position.y = 20
-// // scene.add(stripe2);
-
-// const geometry12 = new THREE.BoxGeometry(20, 1, 0);
-// const stripe3 = new THREE.Mesh(geometry12, material10);
-// stripe3.position.z = -10
-// stripe3.position.x = -20
-// stripe3.position.y = -3
-// // scene.add(stripe3);
-
-// const geometry13 = new THREE.BoxGeometry(20, 1, 0);
-// const stripe4 = new THREE.Mesh(geometry13, material10);
-// stripe4.position.z = -10
-// stripe4.position.x = 20
-// stripe4.position.y = 3
-// // scene.add(stripe4);
-
-function changeColors(color1, color2, color3) {
-    renderer.setClearColor(color1);
-    cube1.material.color.set(color2);
-    cube2.material.color.set(color3);
-    cube3.material.color.set(color1);
-    cube4.material.color.set(color2);
-    cube5.material.color.set(color3);
-    cube6.material.color.set(color1);
-    cube7.material.color.set(color2);
-    cube8.material.color.set(color3);
-}
-
-function changeDuckColors(color) {
-    entenArray[0].traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
-        }
-    });
-}
-
-function changeBlinkerColors(color) {
-    blinkersArray[0].traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
-        }
-    });
-}
-
-function changeDuckColor(color) {
-    ente.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-            child.material.color.set(color);
-        }
-    });
-}
-
-function changeDuckMesh(color) {
-    const material = new THREE.MeshLambertMaterial({ color: color })
-    ente.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-            child.material = material
-        }
-    });
-}
-
-function upsizeDucks() {
-
-    for (let i = 0; i < 11; i++) {
-
-        const angle = (i / 11) * Math.PI * 2;
-        const radius = 0.5;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-
-        entenArray[i].scale.set(0.02, 0.02, 1.2)
-        entenArray[i].position.set(x, y, 0.2)
-    }
-
-}
-
-function downsizeDucks() {
-
-    for (let i = 0; i < 11; i++) {
-
-        const angle = (i / 11) * Math.PI * 2;
-        const radius = 0.5;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-
-        entenArray[i].scale.set(0.05, 0.05, 0.05)
-        entenArray[i].position.set(x, y, 0.2)
-    }
-
-}
-
-function jumping() {
-    for (let i = 0; i < 11; i++) {
-
-        const angle = (i / 11) * Math.PI * 2;
-        const radius = 0.5;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-
-        entenArray[i].position.set(x + x / 6 * zoom, y + y / 6 * zoom)
-
-    }
-}
-
 function openScene() {
     opener1.position.x += 0.00007
     opener1.position.y += 0.00007
@@ -444,24 +287,65 @@ function closeScene() {
     opener4.position.y += 0.00007
 }
 
-const startButton = document.getElementById('startButton');
-startButton.addEventListener('click', function () {
-    music.play();
-    music.context.resume()
-    clock.start()
-    freezedScene = false
-    animate();
-})
+function changeColors(color1, color2, color3) {
+    renderer.setClearColor(color1);
+    cube1.material.color.set(color2);
+    cube2.material.color.set(color3);
+    cube3.material.color.set(color1);
+    cube4.material.color.set(color2);
+    cube5.material.color.set(color3);
+    cube6.material.color.set(color1);
+    // cube7.material.color.set(color2);
+    cube8.material.color.set(color3);
+}
 
+function changeDuckColors(color) {
+    entenArray[0].traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+            child.material.color.set(color);
+        }
+    });
+}
 
-const stopButton = document.getElementById('stopButton');
-stopButton.addEventListener('click', function () {
-    music.pause();
-    music.context.suspend();
-    passedTime = delta
-    clock.stop()
-    freezedScene = true
-})
+function changeDuckColors2(color) {
+    entenArray2[0].traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+            child.material.color.set(color);
+        }
+    });
+}
+
+function changeDuckColor(color) {
+    ente.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+            child.material.color.set(color);
+        }
+    });
+}
+
+function upsizeDucks() {
+    for (let i = 0; i < 11; i++) {
+        entenArray[i].scale.set(0.02, 0.02, 1.2)
+    }
+}
+
+function downsizeDucks() {
+    for (let i = 0; i < 11; i++) {
+        entenArray[i].scale.set(0.05, 0.05, 0.05)
+    }
+}
+
+function jumping() {
+    for (let i = 0; i < 11; i++) {
+        const angle = (i / 11) * Math.PI * 2;
+        const radius = 0.5;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+
+        entenArray[i].position.set(x + x / 6 * zoom, y + y / 6 * zoom)
+        entenArray2[i].position.set(x + x / 6 * zoom, y + y / 6 * zoom)
+    }
+}
 
 function resetTime() {
     clock.stop()
@@ -469,16 +353,33 @@ function resetTime() {
     passedTime = 0
     downsizeDucks()
     changeDuckColors(0xffa500)
+    changeDuckColor(0xFB6542)
+    changeColors(0xFF522D, 0xffa500, 0xFFE346)
     scene.remove(donut)
+    scene.remove(donut2)
     spinnSpeed = 0
-    called = 0
-    stopBlink
     clock.start()
 }
 
-let spinnSpeed = 0;
+const startButton = document.getElementById('startButton');
+startButton.addEventListener('click', function () {
+    if(!clock.running) {
+        music.play();
+        clock.start()
+        freezedScene = false
+        animate();
+    }
+})
 
-music.context.suspend()
+const stopButton = document.getElementById('stopButton');
+stopButton.addEventListener('click', function () {
+    music.pause();
+    passedTime = delta
+    clock.stop()
+    freezedScene = true
+})
+
+let spinnSpeed = 0;
 
 var passedTime = 0
 var delta = 0
@@ -486,19 +387,13 @@ var freezedScene = true
 
 function animate() {
 
-    console.log(duration + "f sdfg sd fs ")
-
     if(!freezedScene) {
-        const currentTime = music.context.currentTime - music.startTime;
         if(clock.running) {
             delta = clock.getElapsedTime() + passedTime
-            // console.log(music.context.currentTime + music.offset)
-            console.log(delta)
         }
 
         if(duration <= delta){
             resetTime()
-            console.log("hello")
         }
     
         analyzeAudio();
@@ -520,47 +415,54 @@ function animate() {
             ente.rotation.y += 0.01;
         }
     
+        // first drop
+
         if (25.15 < delta && delta < 25.25) {
             entenRing(scene)
         }
     
         if (donut) {
             jumping()
-            if (39 > delta || delta > 40.5) {
-                donut.rotation.z += 0.005;
-                cube1.rotation.z += -0.02;
-                cube4.rotation.z += 0.02;
-                cube6.rotation.z += -0.02;
+            if (38.7 > delta || delta > 40.6) {
+                if(delta < 53.5 || delta > 56.1) {
+                    if(delta < 69.7 || delta > 71.4) {
+                        donut.rotation.z += 0.005;
+                        cube1.rotation.z += -0.02;
+                        cube4.rotation.z += 0.02;
+                        cube6.rotation.z += -0.02;
+                    }
+                }
             }
             objectGroup.children.forEach(function (ente, index) {
                 ente.rotation.x += 0.01;
                 ente.rotation.y += 0.01;
             });
+        }
+
+        if (donut2) {
+            if(delta < 69.7 || delta > 71.4) {
+                donut2.rotation.z += 0.005
+            }
+            objectGroup2.children.forEach(function (donut, index) {
     
-            objectGroupBlinkers.children.forEach(function (blinker, index) {
-    
-                if (blinker) {
-                    blinker.rotation.x += 0.01;
-                    blinker.rotation.y += 0.01;
+                if (donut) {
+                    donut.rotation.x += 0.01;
+                    donut.rotation.y += 0.01;
                 }
             });
-    
         }
     
         if (29.03 < delta && delta < 29.13) {
             changeColors(0x003366, 0xCCFF33, 0x00FF99)
-            changeDuckColors(0xCCFF33)
+            changeDuckColors(0x00FF99)
             changeDuckColor(0x003366)
-            // scene.remove(ente)
-            // scene.add(astro)
         }
     
         if (32.9 < delta && delta < 33) {
             changeColors(0x53004B, 0xFDD023, 0x7549B1)
             changeDuckColors(0x7549B1)
             changeDuckColor(0x53004B)
-            // scene.remove(astro)
-            // scene.add(face)
+
         }
     
         if (36.77 < delta && delta < 36.87) {
@@ -575,12 +477,14 @@ function animate() {
             cube4.rotation.z -= 0.02;
             cube6.rotation.z -= -0.02;
         }
+
+        // second drop
     
         if (40.6 < delta && delta < 40.7) {
             changeColors(0xFF522D, 0xffa500, 0xFFE346)
             changeDuckColors(0xFF522D)
+            changeDuckColor(0xFF522D)
             upsizeDucks()
-            changeDuckMesh(0xFF522D)
         }
     
         if (44.5 < delta && delta < 44.6) {
@@ -601,13 +505,84 @@ function animate() {
             changeDuckColor(0x990033)
         }
 
-        
-    
+        if (53.5 < delta && delta < 56.1) {
+            donut.rotation.z -= 0.002;
+            cube1.rotation.z -= -0.02;
+            cube4.rotation.z -= 0.02;
+            cube6.rotation.z -= -0.02;
+        }
 
-    
+        if (56.1 < delta && delta < 56.2) {
+            if(donut2) {
+                changeDuckColors2(0xFFE346)
+                scene.add(donut2)
+            }
+            changeColors(0xFF522D, 0xffa500, 0xFFE346)
+            changeDuckColors(0xFF522D)
+            changeDuckColor(0xFB6542)
+        }
+
+        if (59.9 < delta && delta < 60) {
+            changeDuckColors2(0x00FF99)
+            changeColors(0x003366, 0xCCFF33, 0x00FF99)
+            changeDuckColors(0x003366)
+            changeDuckColor(0x003366)
+        }
+
+        if (63.8 < delta && delta < 63.9) {
+            changeDuckColors2(0x7549B1)
+            changeColors(0x53004B, 0xFDD023, 0x7549B1)
+            changeDuckColors(0x53004B)
+            changeDuckColor(0x53004B)
+        }
+
+        if (67.7 < delta && delta < 67.8) {
+            changeDuckColors2(0xFFFF00)
+            changeColors(0x990033, 0xFFFF00, 0x336699)
+            changeDuckColors(0x990033)
+            changeDuckColor(0x990033)
+        }
+
+
+        if (69.7 < delta && delta < 71.4) {
+            donut2.rotation.z -= 0.002;
+            cube1.rotation.z -= -0.02;
+            cube4.rotation.z -= 0.02;
+            cube6.rotation.z -= -0.02;
+        }
+        
+        if (71.5 < delta && delta < 71.6) {
+            changeDuckColors2(0xFFE346)
+            changeColors(0xFF522D, 0xffa500, 0xFFE346)
+            changeDuckColors(0xFF522D)
+            changeDuckColor(0xFB6542)
+        }
+
+        if (75.4 < delta && delta < 75.5) {
+            changeDuckColors2(0x00FF99)
+            changeColors(0x003366, 0xCCFF33, 0x00FF99)
+            changeDuckColors(0x003366)
+            changeDuckColor(0x003366)
+        }
+
+        
+        if (79.3 < delta && delta < 79.4) {
+            changeDuckColors2(0x7549B1)
+            changeColors(0x53004B, 0xFDD023, 0x7549B1)
+            changeDuckColors(0x53004B)
+            changeDuckColor(0x53004B)
+        }
+
+        if (83.2 < delta && delta < 83.3) {
+            changeDuckColors2(0xFFFF00)
+            changeColors(0x990033, 0xFFFF00, 0x336699)
+            changeDuckColors(0x990033)
+            changeDuckColor(0x990033)
+        }
+
+
         if(delta > 64 && delta < 87) {
             closeScene()
-            // music.context.currentTime = 0
         }
         requestAnimationFrame(animate);
     }
